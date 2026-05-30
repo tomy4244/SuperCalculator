@@ -1,0 +1,7 @@
+com.supermarket.calculator.app-pngs-0 C:\Users\tomy\Desktop\超市计算器_app\android\app\build\generated\res\pngs\release
+com.supermarket.calculator.app-resValues-1 C:\Users\tomy\Desktop\超市计算器_app\android\app\build\generated\res\resValues\release
+com.supermarket.calculator.app-packageReleaseResources-2 C:\Users\tomy\Desktop\超市计算器_app\android\app\build\intermediates\incremental\release\packageReleaseResources\merged.dir
+com.supermarket.calculator.app-packageReleaseResources-3 C:\Users\tomy\Desktop\超市计算器_app\android\app\build\intermediates\incremental\release\packageReleaseResources\stripped.dir
+com.supermarket.calculator.app-merged_res-4 C:\Users\tomy\Desktop\超市计算器_app\android\app\build\intermediates\merged_res\release
+com.supermarket.calculator.app-main-5 C:\Users\tomy\Desktop\超市计算器_app\android\app\src\main\res
+com.supermarket.calculator.app-release-6 C:\Users\tomy\Desktop\超市计算器_app\android\app\src\release\res

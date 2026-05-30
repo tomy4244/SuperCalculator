@@ -1,0 +1,9 @@
+{
+	"appId": "com.calc.supermarket",
+	"appName": "超市计算器",
+	"webDir": "www",
+	"bundledWebRuntime": false,
+	"android": {
+		"allowMixedContent": true
+	}
+}
