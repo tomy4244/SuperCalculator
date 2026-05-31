@@ -29,32 +29,98 @@
       overflow: hidden;     /* block children from expanding this container */
     }
 
-    /* ── Mode Switch (segmented control) ── */
+    /* ── Mode Switch ── */
     .mode-switch {
-      display: grid; grid-template-columns: 1fr 1fr 1fr;
-      gap: 2px; margin-bottom: 8px;
-      background: #1c1c1e;
-      border-radius: 10px;
-      padding: 3px;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 28px;
+      margin-bottom: 8px;
+      background: transparent;
+      border-radius: 0;
+      padding: 8px 0 0;
       flex-shrink: 0;
     }
     .mode-btn {
       border: none;
-      border-radius: 7px;
+      border-radius: 0;
       aspect-ratio: unset;
-      width: 100%;
-      min-height: 36px;
+      width: auto;
+      min-height: unset;
       background: transparent;
-      color: rgba(255,255,255,0.55);
-      font-size: 15px; font-weight: 600;
+      color: rgba(255,255,255,0.38);
+      font-size: 23px; font-weight: 600;
       cursor: pointer; line-height: 1;
-      transition: background .15s, color .15s;
+      transition: color .15s;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       display: flex; align-items: center; justify-content: center;
+      padding: 0 0 6px;
+      border-bottom: 2.5px solid transparent;
     }
-    .mode-btn.active { background: #636366; color: #fff; }
-    .mode-btn:not(.active):active { background: rgba(255,255,255,0.08); }
+    .mode-btn.active {
+      background: transparent;
+      color: #fff;
+      font-size: 30px;
+      font-weight: 600;
+      border-bottom-color: #ff9500;
+    }
+    .mode-btn:not(.active):active { background: transparent; opacity: 0.7; }
+
+    /* ── Settings button ── */
+    .settings-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+      background: transparent !important;
+      border: none;
+      border-radius: 50%;
+      aspect-ratio: unset;
+      width: 36px !important;
+      height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.45);
+      padding: 0 0 6px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .settings-btn:active { opacity: 0.55; }
+
+    /* ── Settings overlay ── */
+    .settings-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000;
+      display: flex; flex-direction: column;
+      padding: 52px 20px 24px;
+    }
+    .settings-overlay.hidden { display: none !important; }
+    .settings-hdr {
+      display: flex; align-items: center;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .settings-hdr-title {
+      font-size: 20px; font-weight: 600; color: #fff;
+    }
+    .settings-back-btn {
+      background: transparent !important;
+      border: none; border-radius: 0;
+      aspect-ratio: unset !important;
+      width: auto !important; height: auto;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #fff;
+      padding: 4px 10px 4px 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .settings-back-btn:active { opacity: 0.55; }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 16px; color: #fff;
+    }
+    .settings-row-val { color: rgba(255,255,255,0.4); font-size: 16px; }
 
     /* ── Display ── */
     .display {
@@ -76,6 +142,31 @@
       text-align: right; font-size: 68px; font-weight: 300;
       line-height: 1.05; white-space: nowrap; overflow: hidden;
       min-width: 0; width: 100%; max-width: 100%; color: #fff;
+    }
+
+    /* ── Calc mode display: expression = primary, result = secondary ── */
+    /* ── Market mode display ── */
+    .calculator[data-mode="market"] .current {
+      font-size: 60px; font-weight: 500; color: #fff;
+    }
+
+    /* Input mode: expression = active (large white), result = secondary (small gray) */
+    .calculator[data-mode="calc"] .history {
+      font-size: 60px; font-weight: 500; color: #fff; min-height: 0;
+      transition: color 200ms ease, font-weight 200ms ease;
+      scrollbar-width: none;          /* Firefox */
+    }
+    .calculator[data-mode="calc"] .history::-webkit-scrollbar { display: none; }
+    .calculator[data-mode="calc"] .current {
+      font-size: 35px; font-weight: 400; color: #888;
+      transition: font-size 200ms ease, color 200ms ease, font-weight 200ms ease;
+    }
+    /* Result mode: result = active (large white), expression = secondary (small gray) */
+    .calculator[data-mode="calc"].result-mode .history {
+      font-size: 34px; font-weight: 300; color: #888;
+    }
+    .calculator[data-mode="calc"].result-mode .current {
+      font-size: 60px; font-weight: 500; color: #fff;
     }
 
     .hidden { display: none !important; }
@@ -106,6 +197,43 @@
       gap: 12px;
       width: 100%; min-width: 0;
     }
+
+    /* ── Calc panel: scaled buttons + shift down ── */
+    /* ── Calc icon row (above MC buttons) ── */
+    .calc-icons {
+      display: none;
+      justify-content: flex-start;
+      gap: 18px;
+      padding: 0 10px 8px;
+      margin-top: 60px;   /* gap lives here: between display and icons */
+    }
+    .calculator[data-mode="calc"] .calc-icons { display: flex; }
+    .icon-btn {
+      background: transparent !important;
+      border: none; border-radius: 50%;
+      aspect-ratio: unset !important;
+      width: 32px !important; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: rgba(255,255,255,0.35);
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .icon-btn:active { opacity: 0.6; }
+
+    #normalPanel {
+      gap: 15px 23px;
+      padding: 8px 14px;
+      margin-top: 0;
+    }
+    #normalPanel button        { font-size: 57px; font-weight: 500; }
+    #normalPanel [data-value="."] { font-size: 33px; }
+    #normalPanel .mem-btn      { font-size: 19px !important; font-weight: 600 !important; }
+    #normalPanel .danger       { font-size: 20px !important; font-weight: 500 !important; }
+    #normalPanel [data-action="delete"] { font-size: 22px; font-weight: 400; }
+    #normalPanel [data-value="%"]       { font-size: 26px; font-weight: 600; }
+    #normalPanel .operator     { font-size: 32px !important; font-weight: 500 !important; }
+    #normalPanel .equals       { font-size: 32px !important; font-weight: 600 !important; }
 
     /* Memory row — very dark small circles */
     .mem-btn {
@@ -164,9 +292,9 @@
       width: 100%; height: 46px; min-height: 46px; min-width: 0;
       border: none;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      background: transparent; color: #fff;
+      background: transparent; color: #888;
       border-radius: 0; padding: 4px 2px;
-      font-size: 23px; font-weight: 600; outline: none;
+      font-size: 30px; font-weight: 400; outline: none;
       /* Lock font — prevent Android WebView input auto-shrink */
       -webkit-text-size-adjust: 100%;
       caret-color: transparent; cursor: pointer;
@@ -284,9 +412,18 @@
       .display { min-height: 80px; padding: 4px 4px 8px; }
       .calculator[data-mode="calc"] .display { flex: 1; }
       .current { font-size: 76px; }
+      .calculator[data-mode="calc"] .history { font-size: 50px; }
+      .calculator[data-mode="calc"] .current { font-size: 32px; }
+
 
       /* Calc keys: natural-height circles (no stretching) */
       .keys { flex-shrink: 0; gap: 11px; }
+      .calc-icons { margin-top: 52px; }
+      #normalPanel { gap: 13px 21px !important; padding: 7px 12px; margin-top: 0; }
+      #normalPanel button { font-size: 50px; font-weight: 500; }
+      #normalPanel [data-value="."] { font-size: 29px; }
+      .calculator[data-mode="calc"].result-mode .history { font-size: 30px; }
+      .calculator[data-mode="calc"].result-mode .current { font-size: 54px; }
 
       /* Market mode: display fixed height — prevents fitDisplay() font changes
          from altering layout and shifting buttons below */
@@ -304,7 +441,8 @@
       .market-row { flex-shrink: 0; }
       /* Fixed height on inputs — prevents Android WebView input font-shrink
          from changing element height and shifting the numpad */
-      .panel-input { height: 46px; min-height: 46px; font-size: 23px; font-weight: 600; }
+      .panel-input { height: 46px; min-height: 46px; font-size: 30px; font-weight: 400; color: #888; }
+      .calculator[data-mode="market"] .current { font-size: 60px; font-weight: 500; }
       /* Numpad grows to fill remaining space; rounded-rect buttons fill each cell */
       #marketNumPad {
         flex: 1; min-height: 0;
@@ -336,6 +474,14 @@
       <button class="mode-btn active" id="calcModeBtn"   type="button">计算</button>
       <button class="mode-btn"        id="marketModeBtn" type="button">超市</button>
       <button class="mode-btn"        id="rateModeBtn"   type="button">汇率</button>
+      <button class="settings-btn" id="settingsBtn" type="button" aria-label="设置">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </section>
 
     <!-- Display (hidden in rate mode) -->
@@ -343,6 +489,28 @@
       <div class="history" id="history"></div>
       <div class="current" id="display">0</div>
     </section>
+
+    <!-- Calc icon row -->
+    <div class="calc-icons">
+      <button class="icon-btn" type="button" aria-label="历史记录">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <polyline points="12 6 12 12 15.5 14"/>
+        </svg>
+      </button>
+      <button class="icon-btn" type="button" aria-label="计算记录">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="3" width="16" height="18" rx="2"/>
+          <line x1="8" y1="8" x2="16" y2="8"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="8" y1="16" x2="13" y2="16"/>
+        </svg>
+      </button>
+    </div>
 
     <!-- Calculator Panel -->
     <section class="keys hidden" id="normalPanel">
@@ -355,7 +523,7 @@
       <!-- Row 2 -->
       <button class="danger" data-action="clear">AC</button>
       <button data-action="delete">⌫</button>
-      <button data-action="sign">±</button>
+      <button data-action="sign" style="font-size:21px;font-weight:600;">+/−</button>
       <button class="operator" data-value="/">÷</button>
 
       <!-- Row 3 -->
@@ -459,6 +627,24 @@
 
   </main>
 
+  <!-- Settings overlay -->
+  <div class="settings-overlay hidden" id="settingsOverlay">
+    <div class="settings-hdr">
+      <button class="settings-back-btn" id="settingsCloseBtn" type="button" aria-label="返回">
+        <svg width="10" height="18" viewBox="0 0 10 18" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 1 1 9 9 17"/>
+        </svg>
+      </button>
+      <span class="settings-hdr-title">设置</span>
+    </div>
+    <div class="settings-row">
+      <span>版本号</span>
+      <span class="settings-row-val">V01</span>
+    </div>
+  </div>
+
   <script>
     const RATE_URL = 'https://www.cronista.com/MercadosOnline/moneda/ARSB/';
 
@@ -528,12 +714,33 @@
 
     /* Auto-shrink display font so numbers never break layout */
     function fitDisplay() {
-      displayEl.style.fontSize = '';                           // reset to CSS value
-      if (displayEl.scrollWidth <= displayEl.clientWidth) return; // fits — done
+      displayEl.style.fontSize = '';
+      if (displayEl.scrollWidth <= displayEl.clientWidth) return;
       const fs = parseFloat(getComputedStyle(displayEl).fontSize);
-      const newFs = Math.max(16, fs * displayEl.clientWidth / displayEl.scrollWidth);
+      const newFs = Math.max(14, fs * displayEl.clientWidth / displayEl.scrollWidth);
       displayEl.style.fontSize = newFs + 'px';
-      // if still overflows at 16px, overflow:hidden clips silently without breaking layout
+    }
+    const MIN_HIST_FS = 40;
+    function fitHistory() {
+      if (!historyEl.textContent) {
+        historyEl.style.fontSize = '';
+        historyEl.style.overflowX = '';
+        return;
+      }
+      // Reset to CSS max so we can measure and allow font to grow back
+      historyEl.style.overflowX = 'hidden';
+      historyEl.style.fontSize = '';
+      if (historyEl.scrollWidth <= historyEl.clientWidth) return; // fits at max — done
+      const maxFs  = parseFloat(getComputedStyle(historyEl).fontSize);
+      const idealFs = maxFs * historyEl.clientWidth / historyEl.scrollWidth;
+      if (idealFs >= MIN_HIST_FS) {
+        historyEl.style.fontSize = idealFs + 'px';
+      } else {
+        // At minimum — stop shrinking, enable horizontal scroll
+        historyEl.style.fontSize = MIN_HIST_FS + 'px';
+        historyEl.style.overflowX = 'auto';
+        requestAnimationFrame(() => { historyEl.scrollLeft = historyEl.scrollWidth; });
+      }
     }
     function setDisplay(text) {
       displayEl.textContent = text;
@@ -543,6 +750,7 @@
     function setMode(mode) {
       currentMode = mode;
       calcEl.dataset.mode = mode;
+      calcEl.classList.remove('result-mode');
       calcModeBtn  .classList.toggle('active', mode === 'calc');
       marketModeBtn.classList.toggle('active', mode === 'market');
       rateModeBtn  .classList.toggle('active', mode === 'rate');
@@ -606,10 +814,12 @@
 
     function updateDisplay() {
       historyEl.textContent = toDisplayExpr(expression);
+      fitHistory();
       setDisplay(liveCalc(expression));
     }
 
     function appendValue(v) {
+      calcEl.classList.remove('result-mode');
       if (justCalcd && /[0-9.]/.test(v)) expression = '';
       justCalcd = false;
       const last = expression.slice(-1);
@@ -633,7 +843,12 @@
     }
 
     function clearAll() {
-      expression = ''; historyEl.textContent = ''; justCalcd = false;
+      expression = '';
+      historyEl.textContent = '';
+      historyEl.style.fontSize = '';
+      historyEl.style.overflowX = '';
+      justCalcd = false;
+      calcEl.classList.remove('result-mode');
       setDisplay('0');
     }
     function deleteOne() {
@@ -659,17 +874,23 @@
     }
     function calculate() {
       if (!expression) return;
+      if (justCalcd) return;
       try {
         const r = Function('"use strict";return(' + fixPct(expression) + ')')();
         if (!Number.isFinite(r)) throw 0;
-        historyEl.textContent = toDisplayExpr(expression) + ' =';
+        const lastExpr = toDisplayExpr(expression);
         expression = fmt(r);
         justCalcd  = true;
+        historyEl.textContent = lastExpr;
+        historyEl.style.fontSize = '';
+        fitHistory();
         setDisplay(expression);
+        calcEl.classList.add('result-mode');   // focus shifts to result
       } catch {
         historyEl.textContent = '计算错误';
         setDisplay('Error');
         expression = ''; justCalcd = false;
+        calcEl.classList.remove('result-mode');
       }
     }
 
@@ -743,6 +964,13 @@
     });
 
     setMode('calc');
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      document.getElementById('settingsOverlay').classList.remove('hidden');
+    });
+    document.getElementById('settingsCloseBtn').addEventListener('click', () => {
+      document.getElementById('settingsOverlay').classList.add('hidden');
+    });
   </script>
 </body>
 </html>
