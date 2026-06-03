@@ -156,6 +156,17 @@
       scrollbar-width: none;
     }
     .calculator[data-mode="calc"] .history::-webkit-scrollbar { display: none; }
+    .hist-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.15em;
+      background: #ff9500;
+      border-radius: 1px;
+      animation: hist-blink 1s step-end infinite;
+      vertical-align: -0.22em;
+      margin: 0 1px;
+    }
+    @keyframes hist-blink { 0%,100%{opacity:1} 50%{opacity:0} }
     .calculator[data-mode="calc"] .current {
       font-size: 35px; font-weight: 400; color: #888;
       transition: font-size 200ms ease, color 200ms ease, font-weight 200ms ease;
@@ -671,13 +682,14 @@
     let expression  = '';
     let justCalcd   = false;
     let activeInput = null;
+    let cursorPos   = -1;
     let rateLoaded  = false;
     let memory      = 0;
     let hasMemory   = false;
 
     function fmt(v) {
       if (!Number.isFinite(v)) return 'Error';
-      return String(parseFloat(v.toFixed(12)));
+      return String(parseFloat(v.toPrecision(10)));
     }
     function evalExpr() {
       if (!expression) return 0;
@@ -735,7 +747,9 @@
       } else {
         historyEl.style.fontSize = MIN_HIST_FS + 'px';
         historyEl.style.overflowX = 'auto';
-        requestAnimationFrame(() => { historyEl.scrollLeft = historyEl.scrollWidth; });
+        requestAnimationFrame(() => {
+          if (cursorPos < 0) historyEl.scrollLeft = historyEl.scrollWidth;
+        });
       }
     }
     function setDisplay(text) {
@@ -747,6 +761,7 @@
       currentMode = mode;
       calcEl.dataset.mode = mode;
       calcEl.classList.remove('result-mode');
+      cursorPos = -1;
       calcModeBtn  .classList.toggle('active', mode === 'calc');
       marketModeBtn.classList.toggle('active', mode === 'market');
       rateModeBtn  .classList.toggle('active', mode === 'rate');
@@ -809,37 +824,57 @@
     }
 
     function updateDisplay() {
-      historyEl.textContent = toDisplayExpr(expression);
+      const disp = toDisplayExpr(expression);
+      const inResult = calcEl.classList.contains('result-mode');
+      if (cursorPos >= 0 && !inResult) {
+        const b = disp.slice(0, cursorPos);
+        const a = disp.slice(cursorPos);
+        historyEl.innerHTML = b + '<span class="hist-cursor"></span>' + a;
+      } else {
+        historyEl.textContent = disp;
+      }
       fitHistory();
       setDisplay(liveCalc(expression));
     }
 
     function appendValue(v) {
       calcEl.classList.remove('result-mode');
-      if (justCalcd && /[0-9.]/.test(v)) expression = '';
+      if (justCalcd && /[0-9.]/.test(v)) { expression = ''; cursorPos = -1; }
       justCalcd = false;
-      const last = expression.slice(-1);
+      const pos  = cursorPos < 0 ? expression.length : cursorPos;
+      const last = pos > 0 ? expression[pos - 1] : '';
       const ops  = ['+', '-', '*', '/', '%'];
       if (ops.includes(v)) {
         if (!expression && v !== '-') return;
         if (v === '%') {
           if (!/\d/.test(last) || last === '%') return;
-          expression += v; updateDisplay(); return;
+          expression = expression.slice(0, pos) + v + expression.slice(pos);
+          if (cursorPos >= 0) cursorPos = pos + 1;
+          updateDisplay(); return;
         }
-        if (ops.includes(last) && last !== '%') expression = expression.slice(0, -1) + v;
-        else expression += v;
+        if (ops.includes(last) && last !== '%') {
+          expression = expression.slice(0, pos - 1) + v + expression.slice(pos);
+        } else {
+          expression = expression.slice(0, pos) + v + expression.slice(pos);
+          if (cursorPos >= 0) cursorPos = pos + 1;
+        }
         updateDisplay(); return;
       }
       if (v === '.') {
-        const chunk = expression.split(/[+\-*/%]/).pop();
+        const chunk = expression.slice(0, pos).split(/[+\-*/%]/).pop();
         if (chunk.includes('.') || chunk === '') return;
-        expression += '.'; updateDisplay(); return;
+        expression = expression.slice(0, pos) + '.' + expression.slice(pos);
+        if (cursorPos >= 0) cursorPos = pos + 1;
+        updateDisplay(); return;
       }
-      expression += v; updateDisplay();
+      expression = expression.slice(0, pos) + v + expression.slice(pos);
+      if (cursorPos >= 0) cursorPos = pos + 1;
+      updateDisplay();
     }
 
     function clearAll() {
       expression = '';
+      cursorPos = -1;
       historyEl.textContent = '';
       historyEl.style.fontSize = '';
       historyEl.style.overflowX = '';
@@ -849,9 +884,14 @@
     }
     function deleteOne() {
       if (justCalcd) { clearAll(); return; }
-      expression = expression.slice(0, -1); updateDisplay();
+      const pos = cursorPos < 0 ? expression.length : cursorPos;
+      if (pos === 0) return;
+      expression = expression.slice(0, pos - 1) + expression.slice(pos);
+      if (cursorPos >= 0) cursorPos = pos - 1;
+      updateDisplay();
     }
     function toggleSign() {
+      cursorPos = -1;
       if (!expression) return;
       const m = expression.match(/(-?\d*\.?\d+)%?$/);
       if (!m) return;
@@ -876,6 +916,7 @@
         if (!Number.isFinite(r)) throw 0;
         const lastExpr = toDisplayExpr(expression);
         expression = fmt(r);
+        cursorPos  = -1;
         justCalcd  = true;
         historyEl.textContent = lastExpr;
         historyEl.style.fontSize = '';
@@ -945,9 +986,39 @@
       inp.addEventListener('touchend', e  => { e.preventDefault(); setActiveInput(inp); });
     });
 
+    historyEl.addEventListener('click', e => {
+      if (currentMode !== 'calc' || justCalcd ||
+          calcEl.classList.contains('result-mode') || !expression) return;
+      let pos = expression.length;
+      const range = document.caretRangeFromPoint
+        ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
+      if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+        const node = range.startContainer;
+        let before = 0;
+        for (const child of historyEl.childNodes) {
+          if (child === node) break;
+          if (child.nodeType === Node.TEXT_NODE) before += child.textContent.length;
+        }
+        pos = Math.min(before + range.startOffset, expression.length);
+      }
+      cursorPos = pos;
+      updateDisplay();
+    });
+
     calcModeBtn  .addEventListener('click', () => setMode('calc'));
     marketModeBtn.addEventListener('click', () => setMode('market'));
-    rateModeBtn  .addEventListener('click', () => setMode('rate'));
+    let rateTabLastTap = 0;
+    rateModeBtn.addEventListener('click', () => {
+      const now = Date.now();
+      if (currentMode === 'rate' && now - rateTabLastTap < 500) {
+        rateLoading.classList.remove('hidden');
+        rateError.classList.add('hidden');
+        rateIframe.src = RATE_URL;
+      } else {
+        setMode('rate');
+      }
+      rateTabLastTap = now;
+    });
 
     window.addEventListener('keydown', e => {
       if (currentMode !== 'calc') return;
